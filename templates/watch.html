@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" 
+          content="width=device-width, initial-scale=1.0">
+    <title>{{ file_name }} — Video Player</title>
+
+    <!-- ================================
+         STYLES
+         Dark theme, mobile friendly
+         ================================ -->
+    <style>
+        /* Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Dark background */
+        body {
+            background: #0f0f1a;
+            color: #ffffff;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-height: 100vh;
+        }
+
+        /* Top navbar */
+        .navbar {
+            background: #1a1a2e;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #e94560;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #e94560;
+            text-decoration: none;
+        }
+
+        .navbar .bot-link {
+            background: #e94560;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* Main container */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px 15px;
+        }
+
+        /* File title */
+        .file-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 15px;
+            padding: 0 5px;
+            word-break: break-word;
+        }
+
+        /* Video wrapper */
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            background: #000000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(233, 69, 96, 0.2);
+        }
+
+        /* Video element */
+        #mainVideo {
+            width: 100%;
+            max-height: 70vh;
+            display: block;
+            background: #000;
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        /* Spinner animation */
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #333;
+            border-top: 4px solid #e94560;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0%   { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #aaa;
+            font-size: 14px;
+        }
+
+        /* Error overlay */
+        .error-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .error-overlay.hidden {
+            display: none;
+        }
+
+        .error-icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+        }
+
+        .error-title {
+            font-size: 20px;
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+
+        .error-msg {
+            color: #aaa;
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            border: none;
+            margin: 5px;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover { opacity: 0.85; }
+
+        .btn-primary {
+            background: #e94560;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #2a2a4a;
+            color: white;
+        }
+
+        /* Info card */
+        .info-card {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #2a2a4a;
+        }
+
+        .info-card h3 {
+            color: #e94560;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #2a2a4a;
+            font-size: 14px;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #888;
+        }
+
+        .info-value {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* Access badge */
+        .badge {
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .badge-premium {
+            background: #ffd700;
+            color: #000;
+        }
+
+        .badge-token {
+            background: #4caf50;
+            color: #fff;
+        }
+
+        .badge-admin {
+            background: #e94560;
+            color: #fff;
+        }
+
+        /* Tips section */
+        .tips {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+            border: 1px solid #2a2a4a;
+        }
+
+        .tips h3 {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .tip-item {
+            color: #666;
+            font-size: 13px;
+            padding: 4px 0;
+        }
+
+        .tip-item::before {
+            content: "💡 ";
+        }
+
+        /* Refer section */
+        .refer-section {
+            background: linear-gradient(
+                135deg, #1a1a2e, #2a1a3e
+            );
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+            border: 1px solid #e94560;
+            text-align: center;
+        }
+
+        .refer-section h3 {
+            color: #e94560;
+            margin-bottom: 8px;
+        }
+
+        .refer-section p {
+            color: #aaa;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+
+        /* Mobile fixes */
+        @media (max-width: 480px) {
+            .file-title { font-size: 15px; }
+            .navbar .logo { font-size: 16px; }
+            #mainVideo { max-height: 55vw; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ================================
+         NAVBAR
+         ================================ -->
+    <nav class="navbar">
+        <a href="/" class="logo">🎬 FileBot</a>
+        <a href="https://t.me/{{ bot_username }}"
+           class="bot-link">
+            Open Bot 🤖
+        </a>
+    </nav>
+
+    <!-- ================================
+         MAIN CONTENT
+         ================================ -->
+    <div class="container">
+
+        <!-- File Title -->
+        <div class="file-title">
+            🎬 {{ file_name }}
+        </div>
+
+        <!-- ============================
+             VIDEO PLAYER
+             ============================ -->
+        <div class="video-wrapper">
+
+            <!-- Loading Overlay -->
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="spinner"></div>
+                <div class="loading-text">
+                    Video load ho rahi hai...
+                </div>
+            </div>
+
+            <!-- Error Overlay -->
+            <div class="error-overlay hidden" id="errorOverlay">
+                <div class="error-icon">😕</div>
+                <div class="error-title">
+                    Video Load Nahi Hui!
+                </div>
+                <div class="error-msg" id="errorMsg">
+                    Kuch error aaya. Dobara try karo.
+                </div>
+                <button class="btn btn-primary"
+                        onclick="retryVideo()">
+                    🔄 Retry
+                </button>
+                <a href="https://t.me/{{ bot_username }}"
+                   class="btn btn-secondary">
+                    Bot Pe Jao 🤖
+                </a>
+            </div>
+
+            <!-- Actual Video Element -->
+            <video
+                id="mainVideo"
+                controls
+                playsinline
+                preload="metadata"
+                controlsList="nodownload">
+
+                <!-- Stream source — Worker se aayegi -->
+                <source
+                    src="{{ stream_url }}"
+                    type="video/mp4"
+                    id="videoSource">
+
+                Tumhara browser video support
+                nahi karta.
+            </video>
+
+        </div>
+        <!-- end video-wrapper -->
+
+        <!-- ============================
+             INFO CARD
+             ============================ -->
+        <div class="info-card">
+            <h3>📋 File Info</h3>
+
+            <div class="info-row">
+                <span class="info-label">📁 File</span>
+                <span class="info-value">
+                    {{ file_name[:30] }}
+                </span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">
+                    🔐 Access Type
+                </span>
+                <span class="info-value">
+                    {% if access_type == "premium" %}
+                        <span class="badge badge-premium">
+                            👑 Premium
+                        </span>
+                    {% elif access_type == "admin" %}
+                        <span class="badge badge-admin">
+                            🔧 Admin
+                        </span>
+                    {% else %}
+                        <span class="badge badge-token">
+                            ✅ Token
+                        </span>
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">👤 User ID</span>
+                <span class="info-value">{{ user_id }}</span>
+            </div>
+
+        </div>
+
+        <!-- ============================
+             TIPS
+             ============================ -->
+        <div class="tips">
+            <h3>📌 Tips</h3>
+            <div class="tip-item">
+                Buffering ho toh thoda ruko
+            </div>
+            <div class="tip-item">
+                WiFi pe better experience milega
+            </div>
+            <div class="tip-item">
+                Full screen ke liye video pe
+                double tap karo
+            </div>
+        </div>
+
+        <!-- ============================
+             REFERRAL SECTION
+             ============================ -->
+        {% if access_type != "premium" %}
+        <div class="refer-section">
+            <h3>👑 Premium Access Chahiye?</h3>
+            <p>
+                5 dosto ko refer karo —
+                lifetime premium access pao!
+                Verification ki zaroorat nahi!
+            </p>
+            <a href="https://t.me/{{ bot_username }}"
+               class="btn btn-primary">
+                Refer Karo 🚀
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+    <!-- end container -->
+
+    <!-- ================================
+         JAVASCRIPT
+         Video loading + error handling
+         ================================ -->
+    <script>
+        // Elements
+        const video         = document.getElementById('mainVideo');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const errorOverlay  = document.getElementById('errorOverlay');
+        const errorMsg      = document.getElementById('errorMsg');
+
+        // Stream URL (Flask se aaya)
+        const streamUrl = "{{ stream_url }}";
+
+        // --------------------------------
+        // Video Events
+        // --------------------------------
+
+        // Video load hone laga
+        video.addEventListener('loadstart', function() {
+            showLoading();
+        });
+
+        // Metadata load ho gayi (duration etc)
+        video.addEventListener('loadedmetadata', function() {
+            hideLoading();
+            console.log('✅ Video metadata loaded');
+        });
+
+        // Video play ho sakti hai
+        video.addEventListener('canplay', function() {
+            hideLoading();
+        });
+
+        // Buffering ho raha hai
+        video.addEventListener('waiting', function() {
+            showLoading();
+        });
+
+        // Buffering khatam
+        video.addEventListener('playing', function() {
+            hideLoading();
+        });
+
+        // Error aaya
+        video.addEventListener('error', function(e) {
+            hideLoading();
+            handleVideoError(e);
+        });
+
+        // --------------------------------
+        // Helper Functions
+        // --------------------------------
+
+        function showLoading() {
+            loadingOverlay.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+        }
+
+        function showError(msg) {
+            errorOverlay.classList.remove('hidden');
+            errorMsg.textContent = msg;
+        }
+
+        function handleVideoError(e) {
+            console.error('Video error:', e);
+
+            // Error type check karo
+            const err = video.error;
+            let msg = "Video load nahi hui. ";
+
+            if (err) {
+                switch(err.code) {
+                    case 1:
+                        // User ne abort kiya
+                        return;
+                    case 2:
+                        msg += "Network error. Internet check karo.";
+                        break;
+                    case 3:
+                        msg += "Video decode nahi ho rahi.";
+                        break;
+                    case 4:
+                        msg += "Video format supported nahi. " +
+                               "Worker setup hone ke baad kaam karega.";
+                        break;
+                    default:
+                        msg += "Unknown error.";
+                }
+            }
+
+            showError(msg);
+        }
+
+        function retryVideo() {
+            // Error overlay hide karo
+            errorOverlay.classList.add('hidden');
+            showLoading();
+
+            // Video reload karo
+            video.load();
+            video.play().catch(function(e) {
+                console.log('Play failed:', e);
+                hideLoading();
+            });
+        }
+
+        // --------------------------------
+        // Page load pe
+        // --------------------------------
+        window.addEventListener('load', function() {
+
+            // Stream URL check karo
+            if (!streamUrl || streamUrl.includes('undefined')) {
+                hideLoading();
+                showError(
+                    "Stream URL missing! " +
+                    "Cloudflare Worker Step 10 mein setup hoga."
+                );
+                return;
+            }
+
+            console.log('🎬 Loading video from:', streamUrl);
+        });
+
+        // --------------------------------
+        // Mobile: Double tap = fullscreen
+        // --------------------------------
+        let lastTap = 0;
+        video.addEventListener('touchend', function(e) {
+            const now = Date.now();
+            if (now - lastTap < 300) {
+                // Double tap!
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                } else {
+                    video.requestFullscreen().catch(err => {
+                        console.log('Fullscreen error:', err);
+                    });
+                }
+            }
+            lastTap = now;
+        });
+
+    </script>
+
+</body>
+</html>
