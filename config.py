@@ -15,8 +15,8 @@ ADMIN_ID = int(os.environ.get("ADMIN_ID", "8488620690"))
 BOT_USERNAME = os.environ.get("BOT_USERNAME", "zfile_robot")
 
 # Shortener API (Step 4 mein use hoga)
-SHORTENER_API_KEY = os.environ.get("SHORTENER_API_KEY", "")
-SHORTENER_API_URL = os.environ.get("SHORTENER_API_URL", "")
+SHORTENER_API_KEY = os.environ.get("SHORTENER_API_KEY", "1e770194be6cba4d0351f370aec4d07436e3fe5c")
+SHORTENER_API_URL = os.environ.get("SHORTENER_API_URL", "https://gplinks.in/api")
 
 # Cloudflare Worker URL (Step 10 mein use hoga)
 WORKER_URL = os.environ.get("WORKER_URL", "")
