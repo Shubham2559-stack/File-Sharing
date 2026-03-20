@@ -1,23 +1,28 @@
 # ================================
-# CONFIG FILE - Yahan apni settings daalo
+# CONFIG FILE - Step 3 Updated
 # ================================
 
-# Telegram Bot Token - BotFather se milega
-BOT_TOKEN = "8714162717:AAHro-UFaJhw2x-Ne2EU3jCfidZ-BquKlqE"
+import os
 
-# Admin ka Telegram User ID - apna ID daalo
-# ID jaanne ke liye @userinfobot pe /start karo
-ADMIN_ID = 8488620690  # <-- apna ID daalo
+# Telegram Bot Token
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
-# Shortener API (baad mein use hoga - abhi empty rehne do)
-SHORTENER_API_KEY = "YOUR_SHORTENER_API_KEY"
-SHORTENER_API_URL = "https://your-shortener.com/api"
+# Admin ID
+ADMIN_ID = int(os.environ.get("ADMIN_ID", "0"))
 
-# Cloudflare Worker URL (baad mein aayega)
-WORKER_URL = "https://your-worker.workers.dev"
+# ⭐ NAYA: Bot Username (share link ke liye zaroori!)
+# @myfilebot_bot hai toh sirf "myfilebot_bot" daalo
+BOT_USERNAME = os.environ.get("BOT_USERNAME", "")
 
-# Message auto-delete time (seconds mein)
-AUTO_DELETE_TIME = 300  # 5 minutes = 300 seconds
+# Shortener API (Step 4 mein use hoga)
+SHORTENER_API_KEY = os.environ.get("SHORTENER_API_KEY", "")
+SHORTENER_API_URL = os.environ.get("SHORTENER_API_URL", "")
 
-# Token kitne ghante valid rahega
-TOKEN_EXPIRY_HOURS = 24
+# Cloudflare Worker URL (Step 10 mein use hoga)
+WORKER_URL = os.environ.get("WORKER_URL", "")
+
+# Message auto-delete time (seconds)
+AUTO_DELETE_TIME = int(os.environ.get("AUTO_DELETE_TIME", "300"))
+
+# Token expiry (hours)
+TOKEN_EXPIRY_HOURS = int(os.environ.get("TOKEN_EXPIRY_HOURS", "24"))
