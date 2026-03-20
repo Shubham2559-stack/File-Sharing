@@ -3,7 +3,7 @@
 # ================================
 
 # Telegram Bot Token - BotFather se milega
-BOT_TOKEN = "8714162717:AAFospvM1XTFURWUvaW_brK_wLYgyf9_8WI"
+BOT_TOKEN = "8714162717:AAHro-UFaJhw2x-Ne2EU3jCfidZ-BquKlqE"
 
 # Admin ka Telegram User ID - apna ID daalo
 # ID jaanne ke liye @userinfobot pe /start karo
