@@ -1,5 +1,5 @@
 # ================================
-# CONFIG FILE - Step 3 Updated
+# CONFIG.PY - Step 8 Updated
 # ================================
 
 import os
@@ -10,19 +10,24 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "8714162717:AAHro-UFaJhw2x-Ne2EU3jCfidZ-
 # Admin ID
 ADMIN_ID = int(os.environ.get("ADMIN_ID", "8488620690"))
 
-# ⭐ NAYA: Bot Username (share link ke liye zaroori!)
-# @myfilebot_bot hai toh sirf "myfilebot_bot" daalo
+# Bot Username
 BOT_USERNAME = os.environ.get("BOT_USERNAME", "zfile_robot")
 
-# Shortener API (Step 4 mein use hoga)
-SHORTENER_API_KEY = os.environ.get("SHORTENER_API_KEY", "1e770194be6cba4d0351f370aec4d07436e3fe5c")
-SHORTENER_API_URL = os.environ.get("SHORTENER_API_URL", "https://gplinks.in/api")
+# Shortener API
+SHORTENER_API_KEY = os.environ.get("SHORTENER_API_KEY", "72a528cbd7a9686e99344385cda651708238c088")
+SHORTENER_API_URL = os.environ.get("SHORTENER_API_URL", "https://linkshortify.com/api")
 
-# Cloudflare Worker URL (Step 10 mein use hoga)
+# Cloudflare Worker URL (Step 10 mein set karenge)
 WORKER_URL = os.environ.get("WORKER_URL", "")
 
-# Message auto-delete time (seconds)
+# Auto delete time
 AUTO_DELETE_TIME = int(os.environ.get("AUTO_DELETE_TIME", "300"))
 
-# Token expiry (hours)
+# Token expiry
 TOKEN_EXPIRY_HOURS = int(os.environ.get("TOKEN_EXPIRY_HOURS", "24"))
+
+# Flask secret key
+SECRET_KEY = os.environ.get("SECRET_KEY", "mysecreetkey2026")
+
+# Website URL (Render dega — Step 11 mein set karenge)
+WEBSITE_URL = os.environ.get("WEBSITE_URL", "")
