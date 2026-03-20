@@ -1,6 +1,6 @@
 # ================================
-# BOT.PY - Step 11 Final
-# Bot + Website + Worker Connected
+# BOT.PY - Final Complete
+# Bot + Flask + 409 Fix
 # ================================
 
 import telebot
@@ -46,14 +46,10 @@ def is_admin(user_id):
     return user_id == config.ADMIN_ID
 
 def generate_share_link(unique_id):
-    """Bot share link banao"""
     return f"https://t.me/{config.BOT_USERNAME}?start=file_{unique_id}"
 
 def generate_watch_link(unique_id, user_id):
-    """
-    Website watch link banao.
-    Sirf video ke liye kaam karega.
-    """
+    """Website watch link banao"""
     if config.WEBSITE_URL:
         return (
             f"{config.WEBSITE_URL}/watch"
@@ -63,7 +59,6 @@ def generate_watch_link(unique_id, user_id):
     return None
 
 def get_file_info_from_message(message):
-    """Message se file info nikalo"""
     if message.video:
         f = message.video
         return f.file_id, 'video', f.file_name or 'video.mp4'
@@ -135,10 +130,7 @@ def send_file_to_user(chat_id, file_info):
         return None
 
 def check_access(user_id):
-    """
-    Access check karo.
-    Admin > Premium > Token > None
-    """
+    """Access check karo"""
     if is_admin(user_id):
         return True, "admin"
     if referral.is_premium(user_id):
@@ -568,10 +560,10 @@ def stats_command(message):
 # --------------------------------
 @bot.message_handler(commands=['mystatus'])
 def mystatus_command(message):
-    user_id          = message.from_user.id
+    user_id            = message.from_user.id
     has_access, reason = check_access(user_id)
-    remaining        = token_manager.get_remaining_time(user_id)
-    is_prem          = referral.is_premium(user_id)
+    remaining          = token_manager.get_remaining_time(user_id)
+    is_prem            = referral.is_premium(user_id)
 
     if has_access:
         bot.reply_to(message, f"""
@@ -876,13 +868,19 @@ def run_flask():
     port = int(os.environ.get("PORT", 5000))
     logger.info(f"🌐 Flask on port {port}...")
 
-    from app import app
-    app.run(
-        host='0.0.0.0',
-        port=port,
-        debug=False,
-        use_reloader=False
-    )
+    try:
+        from app import app
+        logger.info("✅ app.py import successful")
+        app.run(
+            host='0.0.0.0',
+            port=port,
+            debug=False,
+            use_reloader=False
+        )
+    except Exception as e:
+        logger.error(f"❌ Flask error: {e}")
+        import traceback
+        traceback.print_exc()
 
 # ================================
 # BOT START
@@ -897,13 +895,15 @@ if __name__ == "__main__":
 
     token_manager.cleanup_expired()
 
+    # Webhook clear karo
     try:
         bot.remove_webhook()
         logger.info("✅ Webhook cleared")
     except:
         pass
 
-    time.sleep(2)
+    # Purana instance band hone ka wait
+    time.sleep(5)
 
     # Flask thread start karo
     flask_thread = threading.Thread(
@@ -913,14 +913,23 @@ if __name__ == "__main__":
     flask_thread.start()
     logger.info("✅ Flask started")
 
-    time.sleep(1)
+    time.sleep(2)
     logger.info("🚀 Bot polling!")
 
-    try:
-        bot.infinity_polling(
-            skip_pending=True,
-            timeout=20,
-            long_polling_timeout=20
-        )
-    except Exception as e:
-        logger.error(f"Bot error: {e}")
+    # ⭐ 409 error pe retry loop
+    while True:
+        try:
+            bot.infinity_polling(
+                skip_pending=True,
+                timeout=20,
+                long_polling_timeout=20
+            )
+        except Exception as e:
+            logger.error(f"Bot error: {e}")
+            if "409" in str(e):
+                logger.info(
+                    "⏳ 409 error — 30 sec wait..."
+                )
+                time.sleep(30)
+            else:
+                time.sleep(5)
