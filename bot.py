@@ -1,6 +1,6 @@
 # ================================
-# BOT.PY - Step 8 Complete
-# Bot + Flask Threading
+# BOT.PY - Step 11 Final
+# Bot + Website + Worker Connected
 # ================================
 
 import telebot
@@ -46,9 +46,24 @@ def is_admin(user_id):
     return user_id == config.ADMIN_ID
 
 def generate_share_link(unique_id):
+    """Bot share link banao"""
     return f"https://t.me/{config.BOT_USERNAME}?start=file_{unique_id}"
 
+def generate_watch_link(unique_id, user_id):
+    """
+    Website watch link banao.
+    Sirf video ke liye kaam karega.
+    """
+    if config.WEBSITE_URL:
+        return (
+            f"{config.WEBSITE_URL}/watch"
+            f"?id={unique_id}"
+            f"&user={user_id}"
+        )
+    return None
+
 def get_file_info_from_message(message):
+    """Message se file info nikalo"""
     if message.video:
         f = message.video
         return f.file_id, 'video', f.file_name or 'video.mp4'
@@ -121,8 +136,8 @@ def send_file_to_user(chat_id, file_info):
 
 def check_access(user_id):
     """
-    User ko access hai ya nahi.
-    Premium > Token > No Access
+    Access check karo.
+    Admin > Premium > Token > None
     """
     if is_admin(user_id):
         return True, "admin"
@@ -136,17 +151,14 @@ def check_access(user_id):
 # COMMAND HANDLERS
 # ================================
 
-# --------------------------------
-# /start
-# --------------------------------
 @bot.message_handler(commands=['start'])
 def start_command(message):
     """
     4 cases:
     1. Normal /start
-    2. /start file_XXXX  → File request
-    3. /start verify_TOK → Token verify
-    4. /start ref_USERID → Referral
+    2. /start file_XXXX
+    3. /start verify_TOKEN
+    4. /start ref_USERID
     """
     user      = message.from_user
     user_name = user.first_name or "Friend"
@@ -333,10 +345,34 @@ Ab file link wapas use karo! 📁
                 )
             except:
                 pass
+
+            # Watch link banao agar video hai
+            file_type = file_info.get('file_type', '')
+            watch_msg = ""
+
+            if file_type == 'video' and config.WEBSITE_URL:
+                watch_link = (
+                    f"{config.WEBSITE_URL}/watch"
+                    f"?id={unique_id}"
+                    f"&user={user_id}"
+                )
+                watch_msg = (
+                    f"\n\n🎬 **Watch Online:**\n{watch_link}"
+                )
+
             if not is_admin(user_id):
+                remaining = token_manager.get_remaining_time(user_id)
                 bot.send_message(
                     message.chat.id,
                     f"✅ File mil gayi! | {badge}"
+                    f"{watch_msg}",
+                    parse_mode='Markdown'
+                )
+            elif watch_msg:
+                bot.send_message(
+                    message.chat.id,
+                    f"✅ Done!{watch_msg}",
+                    parse_mode='Markdown'
                 )
         else:
             bot.edit_message_text(
@@ -465,7 +501,7 @@ Reward pane ke liye:
 /refer karke aur referrals lao! 🚀
         """, parse_mode='Markdown')
     else:
-        bot.reply_to(message, "❌ Error aaya! Dobara try karo.")
+        bot.reply_to(message, "❌ Error aaya!")
 
 # --------------------------------
 # /stats
@@ -490,6 +526,8 @@ def stats_command(message):
 ━━━━━━━━━━━━━━━━
 📁 Files: {len(files)}
 👥 Users: {database.get_total_users()}
+🌐 Website: {config.WEBSITE_URL or 'Not set'}
+⚡ Worker: {'✅' if config.WORKER_URL else '❌'}
 
 🏆 **Top Referrers:**
 {top3 or "Abhi koi nahi!"}
@@ -685,6 +723,7 @@ def help_command(message):
 ━━━━━━━━━━━━━━━━
 
 🏆 **Premium:** 5 referrals karo!
+🎬 **Watch:** Video files online dekho!
     """, parse_mode='Markdown')
 
 # --------------------------------
@@ -698,8 +737,15 @@ def upload_help_command(message):
     bot.reply_to(message, """
 📤 **Upload Guide**
 
-✅ Video, Document, Photo, Audio
+━━━━━━━━━━━━━━━━
+✅ **Supported:**
+• 🎬 Video → Watch link bhi milega!
+• 📄 Document
+• 🖼️ Photo
+• 🎵 Audio
+
 💡 File bhejo → Bot save kare → Link mile!
+━━━━━━━━━━━━━━━━
     """, parse_mode='Markdown')
 
 # --------------------------------
@@ -725,7 +771,7 @@ def list_files_command(message):
         link = generate_share_link(f['unique_id'])
         text += f"{i}. {emoji} `{f['unique_id']}`\n"
         text += f"    {f['file_name'][:20]}\n"
-        text += f"    [Link]({link})\n\n"
+        text += f"    [Share]({link})\n\n"
 
     bot.reply_to(message, text, parse_mode='Markdown')
 
@@ -761,7 +807,33 @@ def handle_file_upload(message):
         )
         share_link = generate_share_link(unique_id)
 
-        bot.edit_message_text(f"""
+        # Watch link (sirf video ke liye)
+        watch_link = None
+        if file_type == 'video' and config.WEBSITE_URL:
+            watch_link = (
+                f"{config.WEBSITE_URL}/watch"
+                f"?id={unique_id}"
+                f"&user={config.ADMIN_ID}"
+            )
+
+        if watch_link:
+            success_text = f"""
+✅ **File Saved!**
+
+━━━━━━━━━━━━━━━━
+🆔 ID: `{unique_id}`
+📝 Name: {file_name}
+🎯 Type: {file_type}
+
+🔗 **Share Link:**
+`{share_link}`
+
+🎬 **Watch Link:**
+{watch_link}
+━━━━━━━━━━━━━━━━
+            """
+        else:
+            success_text = f"""
 ✅ **File Saved!**
 
 ━━━━━━━━━━━━━━━━
@@ -772,8 +844,15 @@ def handle_file_upload(message):
 🔗 **Share Link:**
 `{share_link}`
 ━━━━━━━━━━━━━━━━
-        """, message.chat.id, proc.message_id,
-             parse_mode='Markdown')
+            """
+
+        bot.edit_message_text(
+            success_text,
+            message.chat.id, proc.message_id,
+            parse_mode='Markdown'
+        )
+
+        logger.info(f"Uploaded: {unique_id} | {file_type}")
 
     except Exception as e:
         logger.error(f"Upload error: {e}")
@@ -793,12 +872,9 @@ def ping_command(message):
 # FLASK THREAD
 # ================================
 def run_flask():
-    """
-    Flask server background mein chalao.
-    Bot ke saath ek saath chalega.
-    """
+    """Flask background mein chalao"""
     port = int(os.environ.get("PORT", 5000))
-    logger.info(f"🌐 Flask starting on port {port}...")
+    logger.info(f"🌐 Flask on port {port}...")
 
     from app import app
     app.run(
@@ -815,11 +891,12 @@ if __name__ == "__main__":
     logger.info("🤖 Bot + Flask starting...")
     logger.info(f"✅ Admin: {config.ADMIN_ID}")
     logger.info(f"✅ Username: @{config.BOT_USERNAME}")
+    logger.info(f"✅ Website: {config.WEBSITE_URL}")
+    logger.info(f"✅ Worker: {config.WORKER_URL}")
     logger.info(f"📁 Files: {database.get_files_count()}")
 
     token_manager.cleanup_expired()
 
-    # Webhook clear karo
     try:
         bot.remove_webhook()
         logger.info("✅ Webhook cleared")
@@ -828,17 +905,16 @@ if __name__ == "__main__":
 
     time.sleep(2)
 
-    # Flask background thread mein chalao
+    # Flask thread start karo
     flask_thread = threading.Thread(
         target=run_flask,
         daemon=True
     )
     flask_thread.start()
-    logger.info("✅ Flask thread started")
+    logger.info("✅ Flask started")
 
     time.sleep(1)
-
-    logger.info("🚀 Bot polling shuru!")
+    logger.info("🚀 Bot polling!")
 
     try:
         bot.infinity_polling(
