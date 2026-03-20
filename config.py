@@ -5,14 +5,14 @@
 import os
 
 # Telegram Bot Token
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8714162717:AAHro-UFaJhw2x-Ne2EU3jCfidZ-BquKlqE")
 
 # Admin ID
-ADMIN_ID = int(os.environ.get("ADMIN_ID", "0"))
+ADMIN_ID = int(os.environ.get("ADMIN_ID", "8488620690"))
 
 # ⭐ NAYA: Bot Username (share link ke liye zaroori!)
 # @myfilebot_bot hai toh sirf "myfilebot_bot" daalo
-BOT_USERNAME = os.environ.get("BOT_USERNAME", "")
+BOT_USERNAME = os.environ.get("BOT_USERNAME", "zfile_robot")
 
 # Shortener API (Step 4 mein use hoga)
 SHORTENER_API_KEY = os.environ.get("SHORTENER_API_KEY", "")
