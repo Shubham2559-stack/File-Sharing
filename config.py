@@ -18,7 +18,7 @@ SHORTENER_API_KEY = os.environ.get("SHORTENER_API_KEY", "72a528cbd7a9686e9934438
 SHORTENER_API_URL = os.environ.get("SHORTENER_API_URL", "https://linkshortify.com/api")
 
 # Cloudflare Worker URL (Step 10 mein set karenge)
-WORKER_URL = os.environ.get("WORKER_URL", "")
+WORKER_URL = os.environ.get("WORKER_URL", "https://telegram-stream.infowebimpact.workers.dev/")
 
 # Auto delete time
 AUTO_DELETE_TIME = int(os.environ.get("AUTO_DELETE_TIME", "300"))
