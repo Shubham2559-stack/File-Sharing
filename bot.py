@@ -1,6 +1,6 @@
 # ================================
-# BOT.PY - Step 7 Final
-# Referral + Reward + Premium System
+# BOT.PY - Step 8 Complete
+# Bot + Flask Threading
 # ================================
 
 import telebot
@@ -11,6 +11,8 @@ import referral
 import logging
 import requests
 import time
+import threading
+import os
 
 logging.basicConfig(
     level=logging.INFO,
@@ -119,23 +121,15 @@ def send_file_to_user(chat_id, file_info):
 
 def check_access(user_id):
     """
-    User ko access hai ya nahi check karo.
-    Premium users ko hamesha access hai.
-    Normal users ko valid token chahiye.
-    Returns: (True/False, reason)
+    User ko access hai ya nahi.
+    Premium > Token > No Access
     """
-    # Admin ko hamesha access
     if is_admin(user_id):
         return True, "admin"
-
-    # Premium user — hamesha access
     if referral.is_premium(user_id):
         return True, "premium"
-
-    # Normal user — token check
     if token_manager.has_valid_access(user_id):
         return True, "token"
-
     return False, "no_access"
 
 # ================================
@@ -150,9 +144,9 @@ def start_command(message):
     """
     4 cases:
     1. Normal /start
-    2. /start file_XXXX
-    3. /start verify_TOKEN
-    4. /start ref_USERID
+    2. /start file_XXXX  → File request
+    3. /start verify_TOK → Token verify
+    4. /start ref_USERID → Referral
     """
     user      = message.from_user
     user_name = user.first_name or "Friend"
@@ -193,7 +187,6 @@ def start_command(message):
 
 Koi file link use karo! 🔗
                 """, parse_mode='Markdown')
-
             elif reason == "self_referral":
                 bot.reply_to(message, f"""
 👋 **Namaste, {user_name}!**
@@ -226,7 +219,6 @@ use nahi kar sakte! 😄
         )
 
         if success:
-            # Referrer ko reward do
             referrer_id = referral.complete_referral(user_id)
 
             if referrer_id:
@@ -234,7 +226,6 @@ use nahi kar sakte! 😄
                     ref_stats = referral.get_stats(referrer_id)
                     count     = ref_stats['referral_count']
 
-                    # Premium mile toh special message
                     if count >= 5 and ref_stats['is_premium']:
                         notif = f"""
 🎊 **PREMIUM UNLOCK HO GAYA!**
@@ -300,7 +291,6 @@ Ab file link wapas use karo! 📁
             bot.reply_to(message, "❌ File nahi mili!")
             return
 
-        # Access check
         has_access, reason = check_access(user_id)
 
         if not has_access:
@@ -326,7 +316,6 @@ Ab file link wapas use karo! 📁
             """, parse_mode='Markdown')
             return
 
-        # Premium badge
         if reason == "premium":
             badge = "👑 Premium Access"
         elif reason == "admin":
@@ -412,12 +401,9 @@ def refer_command(message):
     )
     stats    = referral.get_stats(user_id)
     count    = stats['referral_count']
+    filled   = min(count, 5)
+    bar      = "🟩" * filled + "⬜" * (5 - filled)
     needed   = max(0, 5 - count)
-
-    # Progress bar banao
-    filled  = min(count, 5)
-    empty   = 5 - filled
-    bar     = "🟩" * filled + "⬜" * empty
 
     bot.reply_to(message, f"""
 🔗 **Tumhara Referral Link**
@@ -444,7 +430,6 @@ def refer_command(message):
 # --------------------------------
 @bot.message_handler(commands=['reward'])
 def reward_command(message):
-    """Pending reward claim karo"""
     user_id = message.from_user.id
     pending = referral.get_pending_reward(user_id)
 
@@ -465,12 +450,10 @@ Reward pane ke liye:
     days_claimed, status = referral.claim_reward(user_id)
 
     if status == "claimed":
-        # Token mein add karo
         token_manager.grant_access(
             user_id, hours=days_claimed * 24
         )
         remaining = token_manager.get_remaining_time(user_id)
-
         bot.reply_to(message, f"""
 🎉 **Reward Claim Ho Gaya!**
 
@@ -497,8 +480,10 @@ def stats_command(message):
         top3  = ""
         for i, u in enumerate(lb, 1):
             medal = ["🥇","🥈","🥉"][i-1]
-            top3 += f"{medal} ID `{u['user_id']}` — {u['count']} refs\n"
-
+            top3 += (
+                f"{medal} ID `{u['user_id']}` "
+                f"— {u['count']} refs\n"
+            )
         bot.reply_to(message, f"""
 📊 **Bot Statistics**
 
@@ -545,10 +530,10 @@ def stats_command(message):
 # --------------------------------
 @bot.message_handler(commands=['mystatus'])
 def mystatus_command(message):
-    user_id    = message.from_user.id
+    user_id          = message.from_user.id
     has_access, reason = check_access(user_id)
-    remaining  = token_manager.get_remaining_time(user_id)
-    is_prem    = referral.is_premium(user_id)
+    remaining        = token_manager.get_remaining_time(user_id)
+    is_prem          = referral.is_premium(user_id)
 
     if has_access:
         bot.reply_to(message, f"""
@@ -610,7 +595,6 @@ def verify_command(message):
 # --------------------------------
 @bot.message_handler(commands=['leaderboard'])
 def leaderboard_command(message):
-    """Top referrers ki list"""
     if not is_admin(message.from_user.id):
         bot.reply_to(message, "❌ Sirf admin!")
         return
@@ -638,7 +622,6 @@ def leaderboard_command(message):
 # --------------------------------
 @bot.message_handler(commands=['grantpremium'])
 def grant_premium_command(message):
-    """Admin kisi ko premium de"""
     if not is_admin(message.from_user.id):
         bot.reply_to(message, "❌ Sirf admin!")
         return
@@ -659,7 +642,6 @@ def grant_premium_command(message):
 
     referral.grant_premium(target_id)
 
-    # User ko notify karo
     try:
         bot.send_message(
             target_id,
@@ -702,8 +684,7 @@ def help_command(message):
 • /grantpremium ID - Premium do
 ━━━━━━━━━━━━━━━━
 
-🏆 **Premium Kaise Milega:**
-5 referrals karo → Auto premium!
+🏆 **Premium:** 5 referrals karo!
     """, parse_mode='Markdown')
 
 # --------------------------------
@@ -809,24 +790,55 @@ def ping_command(message):
     bot.reply_to(message, "🏓 Pong!")
 
 # ================================
+# FLASK THREAD
+# ================================
+def run_flask():
+    """
+    Flask server background mein chalao.
+    Bot ke saath ek saath chalega.
+    """
+    port = int(os.environ.get("PORT", 5000))
+    logger.info(f"🌐 Flask starting on port {port}...")
+
+    from app import app
+    app.run(
+        host='0.0.0.0',
+        port=port,
+        debug=False,
+        use_reloader=False
+    )
+
+# ================================
 # BOT START
 # ================================
 if __name__ == "__main__":
-    logger.info("🤖 Bot starting...")
+    logger.info("🤖 Bot + Flask starting...")
     logger.info(f"✅ Admin: {config.ADMIN_ID}")
     logger.info(f"✅ Username: @{config.BOT_USERNAME}")
     logger.info(f"📁 Files: {database.get_files_count()}")
 
     token_manager.cleanup_expired()
 
+    # Webhook clear karo
     try:
         bot.remove_webhook()
         logger.info("✅ Webhook cleared")
     except:
         pass
 
-    time.sleep(3)
-    logger.info("🚀 Polling shuru!")
+    time.sleep(2)
+
+    # Flask background thread mein chalao
+    flask_thread = threading.Thread(
+        target=run_flask,
+        daemon=True
+    )
+    flask_thread.start()
+    logger.info("✅ Flask thread started")
+
+    time.sleep(1)
+
+    logger.info("🚀 Bot polling shuru!")
 
     try:
         bot.infinity_polling(
