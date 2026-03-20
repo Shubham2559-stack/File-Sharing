@@ -30,4 +30,4 @@ TOKEN_EXPIRY_HOURS = int(os.environ.get("TOKEN_EXPIRY_HOURS", "24"))
 SECRET_KEY = os.environ.get("SECRET_KEY", "mysecreetkey2026")
 
 # Website URL (Render dega — Step 11 mein set karenge)
-WEBSITE_URL = os.environ.get("WEBSITE_URL", "https://file-sharing-9bjz.onrender.com")
+WEBSITE_URL = os.environ.get("WEBSITE_URL", "https://file-sharing-61f8.onrender.com")
