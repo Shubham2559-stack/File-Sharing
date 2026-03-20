@@ -129,3 +129,57 @@ def delete_file(unique_id):
 def get_files_count():
     """Kitni files hain total"""
     return len(_cache)
+# database.py ke END mein ye add karo
+# (Baaki code same rahega)
+
+# ================================
+# USER MANAGEMENT
+# Basic user tracking ke liye
+# ================================
+
+USER_FILE = "users_data.json"
+_users = {}
+
+def _load_users():
+    global _users
+    if os.path.exists(USER_FILE):
+        try:
+            with open(USER_FILE, 'r') as f:
+                _users = json.load(f)
+        except:
+            _users = {}
+
+def _save_users():
+    try:
+        with open(USER_FILE, 'w') as f:
+            json.dump(_users, f, indent=2)
+    except Exception as e:
+        logger.error(f"Users save error: {e}")
+
+_load_users()
+
+def save_user(user_id, user_name, username=""):
+    """User ko database mein save karo"""
+    user_key = str(user_id)
+    
+    if user_key not in _users:
+        # Naya user
+        _users[user_key] = {
+            'user_id': user_id,
+            'name': user_name,
+            'username': username,
+            'joined_at': __import__('time').time(),
+            'referred_by': None    # Step 6 mein use hoga
+        }
+        _save_users()
+        return True  # Naya user
+    
+    return False  # Pehle se hai
+
+def get_user(user_id):
+    """User info nikalo"""
+    return _users.get(str(user_id), None)
+
+def get_total_users():
+    """Total users count"""
+    return len(_users)
