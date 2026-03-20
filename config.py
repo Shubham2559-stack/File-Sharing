@@ -3,11 +3,11 @@
 # ================================
 
 # Telegram Bot Token - BotFather se milega
-BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"
+BOT_TOKEN = "8714162717:AAFospvM1XTFURWUvaW_brK_wLYgyf9_8WI"
 
 # Admin ka Telegram User ID - apna ID daalo
 # ID jaanne ke liye @userinfobot pe /start karo
-ADMIN_ID = 123456789  # <-- apna ID daalo
+ADMIN_ID = 8488620690  # <-- apna ID daalo
 
 # Shortener API (baad mein use hoga - abhi empty rehne do)
 SHORTENER_API_KEY = "YOUR_SHORTENER_API_KEY"
